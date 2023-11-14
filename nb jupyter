@@ -1,0 +1,204 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[1]:
+
+
+import nltk
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+from nltk.stem import PorterStemmer
+import numpy as np
+import re
+nltk.download('stopwords')
+import matplotlib.pyplot as plt
+
+
+# NLTK Natural Language Toolkit Library, stopwords, stemmer and tokeniser.
+# Remove special characters and numbers
+
+# In[2]:
+
+
+from bs4 import BeautifulSoup
+import pandas as pd
+from sklearn.feature_extraction.text import CountVectorizer
+
+df = pd.read_csv('IMDB_Dataset.csv')
+
+
+# scikitlearn for count vectorisation - bag of words matrices.
+# Pandas for csv files.
+
+# In[3]:
+
+
+reviews_text = df['review']
+sentiments = df['sentiment']
+
+
+# In[ ]:
+
+
+# parsing html tags in the reviews
+
+def remove_html_tags(text):
+    """
+        remove HTML tags from the input text using Beautiful Soup.
+
+    Args:
+        text with html tags in the parenthesis
+    Returns:
+        str: Text with HTML tags removed.
+    """
+    # create a BeautifulSoup object
+    soup = BeautifulSoup(text, 'html.parser')
+
+    # get the text without HTML tags
+    clean_text = soup.get_text(separator=' ')
+
+    return clean_text
+
+
+# In[4]:
+
+
+def preprocess_review(reviews_text):
+    # remove special characters and numbers etc
+    reviews_text = re.sub(r'[^a-zA-Z]', ' ', reviews_text)
+    
+    # tokenisation 
+    words = word_tokenize(reviews_text)
+
+    # lowercasing
+    words = [word.lower() for word in words]
+    
+    # stopword removal
+    stop_words = set(stopwords.words('english'))
+    words = [word for word in words if word not in stop_words]
+    
+    # stemming
+    stemmer = PorterStemmer()
+    words = [stemmer.stem(word) for word in words]
+    
+    return ' '.join(words)
+
+
+# clean the data using nltk methods
+
+# In[5]:
+
+
+preprocessed_reviews = []
+
+for reviews in reviews_text:
+    preprocessed_review = preprocess_review(reviews) # one review done
+    preprocessed_reviews.append(preprocessed_review) # added to empty array + repeat
+
+
+# count vectoriser - creating a matrix of words that appear in frequency
+
+# In[6]:
+
+
+def count_vectorize(text_data, max_features=5000, stop_words='english'):
+    """
+    arguments 
+    text_data (list):preprocessed text documents.
+    max_features (int): max no of words to include.
+    stop_words (str or list): stop words to be removed. 'english' removes common English stop words.
+
+    Returns:
+    X_count (sparse matrix): Count vectorized representation of text_data.
+    feature_names (list): List of feature names (words).
+    """
+    # create count vectoriser object from sklearn
+    vectorizer = CountVectorizer(
+        max_features=max_features,
+        stop_words=stop_words
+    )
+
+    # fit and transform the text data,, str / list
+    X_count = vectorizer.fit_transform(text_data)
+
+    # get feature names (words)
+    feature_names = vectorizer.get_feature_names_out()
+
+    return X_count, feature_names
+
+
+# calling the function to make sure that it actually works..
+
+# In[7]:
+
+
+X_count, feature_names = count_vectorize(preprocessed_reviews)
+y = df['sentiment'].tolist() 
+# y count has to be in the same number it appears in
+
+
+# Naive Bayes algorithm for various text classification tasks. will split the data in half one for training the other for testing, as the dataset desc.
+# y being described as
+
+# In[8]:
+
+
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(X_count, y, test_size=0.5, random_state=42)
+# split in half and random seed 42
+
+
+# Multinomial Naive Bayes classifier for text classification- calculates the probability of a document belonging to a particular category. in this case, positive and negative.
+
+# In[9]:
+
+
+from sklearn.naive_bayes import MultinomialNB
+
+# create a Multinomial Naive Bayes classifier object 
+nb_classifier = MultinomialNB()
+
+# train classifier on training data
+nb_classifier.fit(X_train, y_train) 
+
+
+# make predictions based on testing data
+
+# visualise the data to see trends from training data, using matplotlib
+# 
+
+# In[13]:
+
+
+# make predictions on the test set
+y_pred = nb_classifier.predict(X_test)
+
+# evaluate the performance using metrics (accuracy, precision, recall, F1-score)
+from sklearn import metrics
+
+accuracy = metrics.accuracy_score(y_test, y_pred)
+precision = metrics.precision_score(y_test, y_pred, pos_label='positive')
+recall = metrics.recall_score(y_test, y_pred, pos_label='positive')
+f1 = metrics.f1_score(y_test, y_pred, pos_label='positive')
+
+print(f"Accuracy: {accuracy:.2f}")
+print(f"Precision: {precision:.2f}")
+print(f"Recall: {recall:.2f}")
+print(f"F1 Score: {f1:.2f}")
+
+
+# In[14]:
+
+
+# data visualisation using a confusion matrix
+
+from sklearn.metrics import confusion_matrix
+import seaborn as sns
+
+cm = confusion_matrix(y_test, y_pred)
+sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=['Negative', 'Positive'], yticklabels=['Negative', 'Positive'])
+plt.xlabel('Predicted')
+plt.ylabel('Actual')
+plt.title('Confusion Matrix')
+plt.show()
+
