@@ -169,7 +169,6 @@ nb_classifier.fit(X_train, y_train)
 
 # In[13]:
 
-
 # make predictions on the test set
 y_pred = nb_classifier.predict(X_test)
 
@@ -177,14 +176,24 @@ y_pred = nb_classifier.predict(X_test)
 from sklearn import metrics
 
 accuracy = metrics.accuracy_score(y_test, y_pred)
-precision = metrics.precision_score(y_test, y_pred, pos_label='positive')
-recall = metrics.recall_score(y_test, y_pred, pos_label='positive')
-f1 = metrics.f1_score(y_test, y_pred, pos_label='positive')
+precision_pos = metrics.precision_score(y_test, y_pred, pos_label='positive')
+recall_pos = metrics.recall_score(y_test, y_pred, pos_label='positive')
+f1_pos = metrics.f1_score(y_test, y_pred, pos_label='positive')
 
+precision_neg = metrics.precision_score(y_test, y_pred, pos_label='negative')
+recall_neg = metrics.recall_score(y_test, y_pred, pos_label='negative')
+f1_neg = metrics.f1_score(y_test, y_pred, pos_label='negative')
+
+print("Positive Sentiment Metrics:")
 print(f"Accuracy: {accuracy:.2f}")
-print(f"Precision: {precision:.2f}")
-print(f"Recall: {recall:.2f}")
-print(f"F1 Score: {f1:.2f}")
+print(f"Precision: {precision_pos:.2f}")
+print(f"Recall: {recall_pos:.2f}")
+print(f"F1 Score: {f1_pos:.2f}")
+
+print("\nNegative Sentiment Metrics:")
+print(f"Precision: {precision_neg:.2f}")
+print(f"Recall: {recall_neg:.2f}")
+print(f"F1 Score: {f1_neg:.2f}")
 
 
 # In[14]:
